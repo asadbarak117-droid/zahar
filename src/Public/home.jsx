@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -11,65 +12,83 @@ import {
   Headphones,
 } from "lucide-react";
 
-const categories = [
-  {
-    name: "Makeup",
-    description: "Express your beauty",
-    image:
-      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=700&q=85",
-  },
-  {
-    name: "Skincare",
-    description: "Care for your skin",
-    image:
-      "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=700&q=85",
-  },
-  {
-    name: "Fashion",
-    description: "Complete your look",
-    image:
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=700&q=85",
-  },
-];
+const API_URL = "http://localhost:5000/api/home";
 
-const products = [
-  {
-    id: 1,
-    name: "Radiant Foundation",
-    category: "Makeup",
-    price: "$19.99",
-    image:
-      "https://images.unsplash.com/photo-1631214540242-7b7c7f2a4c6b?auto=format&fit=crop&w=600&q=85",
-    badge: "Popular",
-  },
-  {
-    id: 2,
-    name: "Everyday Lip Tint",
-    category: "Lip Makeup",
-    price: "$12.50",
-    image:
-      "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=600&q=85",
-    badge: "New",
-  },
-  {
-    id: 3,
-    name: "Skin Care Essentials",
-    category: "Skincare",
-    price: "$24.00",
-    image:
-      "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=600&q=85",
-    badge: "",
-  },
-  {
-    id: 4,
-    name: "Beauty Collection",
-    category: "Beauty",
-    price: "$29.99",
-    image:
-      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=85",
-    badge: "Trending",
-  },
-];
+const defaultContent = {
+  brand: "FASHION",
+  heroBackgroundType: "video",
+  heroBadge: "Discover Your Beauty",
+  heroTitle: "Your Beauty.",
+  heroSubtitle: "Your Story.",
+  heroDescription:
+    "Discover beauty and fashion essentials that express your individuality. Find your favorite products and create a look that feels uniquely yours.",
+  heroVideo: "/videos/hero.mp4",
+  heroPoster:
+    "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1600&q=80",
+  primaryButton: "Shop Collection",
+  secondaryButton: "Explore More",
+  primaryColor: "#38bdf8",
+  backgroundColor: "#ffffff",
+  textColor: "#1e293b",
+  promotionTitle: "A Little Beauty, A Lot of Confidence",
+  promotionDescription:
+    "Discover beauty essentials that help you express yourself and feel confident every day.",
+  footerDescription: "Your style, your story. Find what feels like you.",
+  categories: [
+    {
+      name: "Makeup",
+      description: "Express your beauty",
+      image:
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=700&q=85",
+    },
+    {
+      name: "Skincare",
+      description: "Care for your skin",
+      image:
+        "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=700&q=85",
+    },
+    {
+      name: "Fashion",
+      description: "Complete your look",
+      image:
+        "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=700&q=85",
+    },
+  ],
+  products: [
+    {
+      name: "Radiant Foundation",
+      category: "Makeup",
+      price: "19.99",
+      image:
+        "https://images.unsplash.com/photo-1631214540242-7b7c7f2a4c6b?auto=format&fit=crop&w=600&q=85",
+      badge: "Popular",
+    },
+    {
+      name: "Everyday Lip Tint",
+      category: "Lip Makeup",
+      price: "12.50",
+      image:
+        "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=600&q=85",
+      badge: "New",
+    },
+    {
+      name: "Skin Care Essentials",
+      category: "Skincare",
+      price: "24.00",
+      image:
+        "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=600&q=85",
+      badge: "",
+    },
+    {
+      name: "Beauty Collection",
+      category: "Beauty",
+      price: "29.99",
+      image:
+        "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=85",
+      badge: "Trending",
+    },
+  ],
+};
 
 const benefits = [
   {
@@ -90,22 +109,86 @@ const benefits = [
 ];
 
 function Home() {
+  const [content, setContent] = useState(defaultContent);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadHomeContent() {
+      try {
+        const response = await fetch(API_URL, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Homepage request failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const saved = result.content ?? result;
+
+        setContent({
+          ...defaultContent,
+          ...saved,
+          categories:
+            Array.isArray(saved.categories) && saved.categories.length > 0
+              ? saved.categories
+              : defaultContent.categories,
+          products:
+            Array.isArray(saved.products) && saved.products.length > 0
+              ? saved.products
+              : defaultContent.products,
+        });
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Could not load homepage content from backend:", error);
+        }
+      }
+    }
+
+    loadHomeContent();
+
+    return () => controller.abort();
+  }, []);
+
+  const money = (price) => {
+    if (price === undefined || price === null || price === "") return "";
+    const value = String(price);
+    return value.startsWith("$") ? value : `$${value}`;
+  };
+
   return (
-    <main className="overflow-hidden bg-white text-slate-800">
-      {/* Hero Section with Video Background */}
+    <main
+      className="overflow-hidden bg-white text-slate-800"
+      style={{
+        backgroundColor: content.backgroundColor || "#ffffff",
+        color: content.textColor || "#1e293b",
+      }}
+    >
       <section className="relative isolate min-h-[650px] overflow-hidden bg-sky-950">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1600&q=80"
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
-        >
-          <source src="/videos/hero.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        {content.heroBackgroundType === "video" && content.heroVideo ? (
+          <video
+            key={content.heroVideo}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={content.heroPoster}
+            className="absolute inset-0 -z-20 h-full w-full object-cover"
+          >
+            <source src={content.heroVideo} type="video/mp4" />
+          </video>
+        ) : (
+          <div
+            className="absolute inset-0 -z-20 bg-cover bg-center"
+            style={{
+              backgroundImage: content.heroPoster
+                ? `url("${content.heroPoster}")`
+                : "none",
+            }}
+          />
+        )}
 
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-sky-950/85 via-sky-900/55 to-sky-800/25" />
 
@@ -118,18 +201,21 @@ function Home() {
           >
             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-sm font-medium backdrop-blur-md">
               <Sparkles size={16} />
-              Discover Your Beauty
+              {content.heroBadge}
             </div>
 
             <h1 className="font-serif text-5xl font-bold leading-tight tracking-tight sm:text-6xl lg:text-7xl">
-              Your Beauty.
-              <span className="mt-2 block text-sky-300">Your Story.</span>
+              {content.heroTitle}
+              <span
+                className="mt-2 block"
+                style={{ color: content.primaryColor || "#38bdf8" }}
+              >
+                {content.heroSubtitle}
+              </span>
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-8 text-white/90 sm:text-lg">
-              Discover beauty and fashion essentials that express your
-              individuality. Find your favorite products and create a look that
-              feels uniquely yours.
+              {content.heroDescription}
             </p>
 
             <div className="mt-9 flex flex-wrap gap-4">
@@ -139,9 +225,10 @@ function Home() {
               >
                 <Link
                   to="/products"
-                  className="inline-flex items-center gap-3 rounded-full bg-sky-400 px-7 py-4 font-semibold text-white shadow-lg shadow-sky-950/20 transition hover:bg-sky-300 hover:text-sky-950"
+                  className="inline-flex items-center gap-3 rounded-full px-7 py-4 font-semibold text-white shadow-lg transition hover:brightness-110"
+                  style={{ backgroundColor: content.primaryColor || "#38bdf8" }}
                 >
-                  Shop Collection
+                  {content.primaryButton}
                   <ArrowRight size={19} />
                 </Link>
               </motion.div>
@@ -150,7 +237,7 @@ function Home() {
                 to="/consultation"
                 className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition hover:bg-white hover:text-sky-900"
               >
-                Explore More
+                {content.secondaryButton}
               </Link>
             </div>
 
@@ -159,9 +246,7 @@ function Home() {
                 <Star size={17} className="fill-sky-300 text-sky-300" />
                 Beauty & Fashion
               </div>
-
               <span className="hidden h-5 w-px bg-white/40 sm:block" />
-
               <div className="flex items-center gap-2">
                 <Heart size={17} className="text-sky-300" />
                 Made for You
@@ -171,12 +256,10 @@ function Home() {
         </div>
       </section>
 
-      {/* Benefits */}
       <section className="border-y border-sky-100 bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-5 py-9 sm:grid-cols-2 md:px-8 lg:grid-cols-3">
           {benefits.map((benefit, index) => {
             const Icon = benefit.icon;
-
             return (
               <motion.div
                 key={benefit.title}
@@ -189,7 +272,6 @@ function Home() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-500">
                   <Icon size={23} />
                 </div>
-
                 <div>
                   <h3 className="font-semibold text-slate-800">
                     {benefit.title}
@@ -204,7 +286,6 @@ function Home() {
         </div>
       </section>
 
-      {/* Categories */}
       <section className="mx-auto max-w-7xl px-5 py-20 md:px-8 md:py-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -217,16 +298,13 @@ function Home() {
             <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-sky-500">
               Find Your Favorites
             </p>
-
             <h2 className="font-serif text-3xl font-bold text-slate-900 sm:text-4xl">
               Explore Our Categories
             </h2>
-
             <p className="mt-3 text-slate-500">
               Discover products that fit your style.
             </p>
           </div>
-
           <Link
             to="/products"
             className="inline-flex items-center gap-2 font-semibold text-sky-600 transition hover:text-sky-700"
@@ -236,9 +314,9 @@ function Home() {
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category, index) => (
+          {content.categories.map((category, index) => (
             <motion.div
-              key={category.name}
+              key={category._id || `${category.name}-${index}`}
               initial={{ opacity: 0, y: 25 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -249,15 +327,17 @@ function Home() {
                 to="/products"
                 className="group relative block overflow-hidden rounded-3xl bg-sky-50"
               >
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  loading="lazy"
-                  className="h-80 w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-
+                {category.image ? (
+                  <img
+                    src={category.image}
+                    alt={category.name || "Category"}
+                    loading="lazy"
+                    className="h-80 w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="h-80 w-full bg-sky-100" />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
-
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-6 text-white">
                   <div>
                     <h3 className="font-serif text-2xl font-bold">
@@ -267,7 +347,6 @@ function Home() {
                       {category.description}
                     </p>
                   </div>
-
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-sky-600 transition duration-300 group-hover:bg-sky-400 group-hover:text-white">
                     <ArrowRight size={20} />
                   </span>
@@ -278,7 +357,6 @@ function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
       <section className="bg-sky-50/70 py-20 md:py-24">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <motion.div
@@ -290,11 +368,9 @@ function Home() {
             <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-sky-500">
               Curated for You
             </p>
-
             <h2 className="font-serif text-3xl font-bold text-slate-900 sm:text-4xl">
               Featured Products
             </h2>
-
             <p className="mx-auto mt-4 max-w-xl leading-7 text-slate-500">
               Discover our beauty favorites and find your next everyday
               essential.
@@ -302,9 +378,9 @@ function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product, index) => (
+            {content.products.map((product, index) => (
               <motion.article
-                key={product.id}
+                key={product._id || `${product.name}-${index}`}
                 initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -316,19 +392,21 @@ function Home() {
                   to="/products"
                   className="relative block overflow-hidden rounded-2xl bg-sky-50"
                 >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    loading="lazy"
-                    className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
-                  />
-
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name || "Product"}
+                      loading="lazy"
+                      className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="h-72 w-full bg-sky-100" />
+                  )}
                   {product.badge && (
                     <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-sky-600 shadow-sm">
                       {product.badge}
                     </span>
                   )}
-
                   <span className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-sky-600 shadow-md transition duration-300 group-hover:bg-sky-400 group-hover:text-white">
                     <ArrowRight size={18} />
                   </span>
@@ -338,19 +416,16 @@ function Home() {
                   <p className="text-xs font-medium uppercase tracking-wider text-sky-500">
                     {product.category}
                   </p>
-
                   <h3 className="mt-2 font-semibold text-slate-800">
                     {product.name}
                   </h3>
-
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-lg font-bold text-slate-900">
-                      {product.price}
+                      {money(product.price)}
                     </span>
-
                     <Link
                       to="/products"
-                      aria-label={`View ${product.name}`}
+                      aria-label={`View ${product.name || "product"}`}
                       className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-50 text-sky-600 transition hover:bg-sky-400 hover:text-white"
                     >
                       <ShoppingBag size={17} />
@@ -366,62 +441,53 @@ function Home() {
               to="/products"
               className="inline-flex items-center gap-3 rounded-full bg-sky-400 px-8 py-4 font-semibold text-white shadow-lg shadow-sky-200 transition hover:-translate-y-1 hover:bg-sky-500"
             >
-              Explore All Products
-              <ArrowRight size={19} />
+              Explore All Products <ArrowRight size={19} />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Promotional Banner */}
       <section className="px-5 py-20 md:px-8 md:py-24">
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-sky-300 via-sky-400 to-blue-400 px-7 py-14 text-center text-white sm:px-14 sm:py-20"
+          className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] px-7 py-14 text-center text-white sm:px-14 sm:py-20"
+          style={{
+            background: `linear-gradient(to bottom right, ${content.primaryColor || "#7dd3fc"}, #60a5fa)`,
+          }}
         >
           <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[40px] border-white/10" />
           <div className="absolute -bottom-24 -left-16 h-64 w-64 rounded-full border-[40px] border-white/10" />
-
           <div className="relative z-10 mx-auto max-w-2xl">
             <Sparkles size={32} className="mx-auto mb-5" />
-
             <h2 className="font-serif text-3xl font-bold sm:text-5xl">
-              A Little Beauty, A Lot of Confidence
+              {content.promotionTitle}
             </h2>
-
             <p className="mx-auto mt-5 max-w-xl leading-7 text-white/90">
-              Discover beauty essentials that help you express yourself and feel
-              confident every day.
+              {content.promotionDescription}
             </p>
-
             <Link
               to="/products"
               className="mt-8 inline-flex items-center gap-3 rounded-full bg-white px-8 py-4 font-semibold text-sky-600 shadow-lg transition hover:-translate-y-1 hover:bg-sky-50"
             >
-              Start Shopping
-              <ArrowRight size={19} />
+              Start Shopping <ArrowRight size={19} />
             </Link>
           </div>
         </motion.div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-sky-100 bg-sky-50">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 px-5 py-8 text-center sm:flex-row sm:text-left md:px-8">
           <Link
             to="/"
             className="font-serif text-2xl font-bold tracking-widest text-slate-900"
           >
-            FASHION<span className="text-sky-400">.</span>
+            {content.brand}
+            <span className="text-sky-400">.</span>
           </Link>
-
-          <p className="text-sm text-slate-500">
-            Your style, your story. Find what feels like you.
-          </p>
-
+          <p className="text-sm text-slate-500">{content.footerDescription}</p>
           <div className="flex gap-5 text-sm font-medium text-slate-600">
             <Link to="/products" className="transition hover:text-sky-500">
               Products
@@ -434,9 +500,8 @@ function Home() {
             </Link>
           </div>
         </div>
-
         <div className="border-t border-sky-100 px-5 py-4 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} FASHION. All rights reserved.
+          © {new Date().getFullYear()} {content.brand}. All rights reserved.
         </div>
       </footer>
     </main>

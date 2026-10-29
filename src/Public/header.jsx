@@ -6,30 +6,103 @@ import {
   ArrowUpRight,
   Menu,
   X,
+  Sparkles,
+  Globe,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const API_URL = "http://localhost:5000/api/header";
+
+const defaultHeader = {
+  logoLetter: "L",
+  siteName: "Ledora",
+  tagline: "Beauty & Elegance",
+  backgroundColor: "#f0f9ff",
+  accentColor: "#38bdf8",
+  textColor: "#082f49",
+  buttonText: "Connect",
+  buttonPath: "/connect",
+  links: [
+    { label: "Home", path: "/", enabled: true },
+    { label: "Products", path: "/products", enabled: true },
+    { label: "Consultation", path: "/consultation", enabled: true },
+    { label: "Connect", path: "/connect", enabled: true },
+  ],
+};
+
+function getIcon(label) {
+  const name = label.toLowerCase();
+
+  if (name.includes("home")) return Home;
+  if (name.includes("product") || name.includes("shop")) return ShoppingBag;
+  if (name.includes("consult") || name.includes("connect")) {
+    return MessageCircle;
+  }
+
+  return Globe;
+}
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [header, setHeader] = useState(defaultHeader);
 
-  const links = [
-    { name: "Home", path: "/", icon: Home },
-    { name: "Products", path: "/products", icon: ShoppingBag },
-    { name: "Consultation", path: "/consultation", icon: MessageCircle },
-  ];
+  useEffect(() => {
+    let active = true;
 
-  const linkVariants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0 },
-  };
+    async function loadHeader() {
+      try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error("Could not load header settings");
+        }
+
+        const data = await response.json();
+        const settings = data.header ?? data;
+
+        if (active) {
+          setHeader({
+            ...defaultHeader,
+            ...settings,
+            links:
+              Array.isArray(settings.links) && settings.links.length > 0
+                ? settings.links
+                : defaultHeader.links,
+          });
+        }
+      } catch (error) {
+        console.error("Header loading failed:", error.message);
+      }
+    }
+
+    loadHeader();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const links = header.links.filter(
+    (link) => link.enabled !== false && link.label && link.path,
+  );
+
+  const buttonPath = header.buttonPath || "/connect";
+  const buttonText = header.buttonText || "Connect";
+
+  const logoLetter = header.logoLetter || header.siteName?.charAt(0) || "L";
 
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="sticky top-0 z-50 border-b border-sky-100 bg-sky-50/95 text-sky-950 shadow-lg shadow-sky-200/30 backdrop-blur-xl"
+      style={{
+        backgroundColor: `${header.backgroundColor || "#f0f9ff"}f2`,
+        color: header.textColor || "#082f49",
+        borderColor: `${header.accentColor || "#38bdf8"}35`,
+      }}
+      className="sticky top-0 z-50 border-b shadow-lg shadow-sky-200/30 backdrop-blur-xl"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 md:px-8">
         <Link
@@ -40,36 +113,52 @@ function Header() {
           <motion.div
             whileHover={{ rotate: -8, scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-300 via-sky-400 to-blue-400 shadow-lg shadow-sky-300/40 group-hover:rounded-full"
+            style={{
+              background: `linear-gradient(135deg, ${header.accentColor || "#38bdf8"}, #60a5fa)`,
+            }}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg shadow-sky-300/40 transition-all group-hover:rounded-full"
           >
-            <span className="font-serif text-3xl italic text-white">F</span>
+            <span className="font-serif text-3xl italic text-white">
+              {logoLetter}
+            </span>
           </motion.div>
 
           <div>
-            <h1 className="font-serif text-xl font-bold tracking-widest transition-colors group-hover:text-sky-500 sm:text-2xl">
-              FASHION<span className="text-sky-400">.</span>
+            <h1 className="font-serif text-xl font-bold tracking-widest transition-colors sm:text-2xl">
+              {header.siteName || "Ledora"}
+              <span style={{ color: header.accentColor }}>.</span>
             </h1>
-            <p className="mt-1 text-[8px] tracking-[0.25em] text-sky-700/70">
-              YOUR STYLE, YOUR STORY
+            <p
+              style={{ color: header.textColor || "#082f49" }}
+              className="mt-1 text-[8px] uppercase tracking-[0.25em] opacity-70"
+            >
+              {header.tagline || "Beauty & Elegance"}
             </p>
           </div>
         </Link>
 
         <nav className="hidden items-center gap-2 rounded-full border border-sky-100 bg-white/90 p-1.5 shadow-sm md:flex">
           {links.map((link) => {
-            const Icon = link.icon;
+            const Icon = getIcon(link.label);
 
             return (
               <NavLink
-                key={link.path}
+                key={`${link.label}-${link.path}`}
                 to={link.path}
                 end={link.path === "/"}
                 className={({ isActive }) =>
                   `group flex items-center gap-2 rounded-full px-4 py-3 text-sm transition-all duration-300 lg:px-5 ${
                     isActive
-                      ? "bg-sky-400 text-white shadow-md shadow-sky-200"
+                      ? "text-white shadow-md"
                       : "text-slate-600 hover:bg-sky-50 hover:text-sky-600"
                   }`
+                }
+                style={({ isActive }) =>
+                  isActive
+                    ? {
+                        backgroundColor: header.accentColor || "#38bdf8",
+                      }
+                    : {}
                 }
               >
                 {({ isActive }) => (
@@ -79,7 +168,8 @@ function Header() {
                     className="flex items-center gap-2"
                   >
                     <Icon size={17} />
-                    <span>{link.name}</span>
+                    <span>{link.label}</span>
+
                     {isActive && (
                       <motion.span
                         layoutId="activeNavIndicator"
@@ -102,7 +192,8 @@ function Header() {
               to="/products"
               aria-label="Go to products"
               title="Shop products"
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-sky-100 bg-white text-sky-600 transition-colors duration-300 hover:bg-sky-400 hover:text-white hover:shadow-lg hover:shadow-sky-200"
+              style={{ color: header.accentColor }}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-sky-100 bg-white transition-colors duration-300 hover:bg-sky-400 hover:text-white hover:shadow-lg"
             >
               <ShoppingBag size={20} />
             </Link>
@@ -110,10 +201,13 @@ function Header() {
 
           <motion.div whileHover={{ y: -3 }} whileTap={{ scale: 0.97 }}>
             <Link
-              to="/connect"
-              className="group flex items-center gap-3 rounded-full bg-sky-400 px-5 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-sky-500 hover:shadow-lg hover:shadow-sky-200"
+              to={buttonPath}
+              style={{
+                backgroundColor: header.accentColor || "#38bdf8",
+              }}
+              className="group flex items-center gap-3 rounded-full px-5 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:brightness-95 hover:shadow-lg"
             >
-              Connect
+              {buttonText}
               <motion.span whileHover={{ x: 3, y: -3 }} className="flex">
                 <ArrowUpRight size={17} />
               </motion.span>
@@ -127,7 +221,10 @@ function Header() {
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? "Close menu" : "Open menu"}
           aria-expanded={isOpen}
-          className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-400 text-white transition hover:bg-sky-500 md:hidden"
+          style={{
+            backgroundColor: header.accentColor || "#38bdf8",
+          }}
+          className="flex h-11 w-11 items-center justify-center rounded-xl text-white transition hover:brightness-95 md:hidden"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
@@ -151,18 +248,21 @@ function Header() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden border-t border-sky-100 bg-sky-50 md:hidden"
+            style={{
+              backgroundColor: header.backgroundColor || "#f0f9ff",
+              borderColor: `${header.accentColor || "#38bdf8"}35`,
+            }}
+            className="overflow-hidden border-t md:hidden"
           >
             <div className="flex flex-col gap-2 px-5 py-5">
               {links.map((link, index) => {
-                const Icon = link.icon;
+                const Icon = getIcon(link.label);
 
                 return (
                   <motion.div
-                    key={link.path}
-                    variants={linkVariants}
-                    initial="hidden"
-                    animate="visible"
+                    key={`${link.label}-${link.path}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.07, duration: 0.25 }}
                   >
                     <NavLink
@@ -172,16 +272,25 @@ function Header() {
                       className={({ isActive }) =>
                         `flex items-center justify-between rounded-2xl border p-4 transition-all duration-300 ${
                           isActive
-                            ? "border-sky-400 bg-sky-400 text-white"
-                            : "border-sky-100 bg-white text-slate-600 hover:border-sky-300 hover:bg-sky-100 hover:text-sky-600"
+                            ? "border-transparent text-white"
+                            : "border-sky-100 bg-white text-slate-600 hover:bg-sky-50"
                         }`
+                      }
+                      style={({ isActive }) =>
+                        isActive
+                          ? {
+                              backgroundColor: header.accentColor || "#38bdf8",
+                            }
+                          : {}
                       }
                     >
                       <span className="flex items-center gap-3">
                         <Icon size={19} />
-                        <span>{link.name}</span>
+                        <span>{link.label}</span>
                       </span>
-                      <span className="text-xs opacity-60">0{index + 1}</span>
+                      <span className="text-xs opacity-60">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
                     </NavLink>
                   </motion.div>
                 );
@@ -193,13 +302,16 @@ function Header() {
                 transition={{ delay: links.length * 0.07, duration: 0.25 }}
               >
                 <Link
-                  to="/connect"
+                  to={buttonPath}
                   onClick={() => setIsOpen(false)}
-                  className="mt-2 flex items-center justify-between rounded-2xl bg-gradient-to-r from-sky-400 to-blue-400 p-4 font-semibold text-white shadow-md shadow-sky-200/50"
+                  style={{
+                    background: `linear-gradient(to right, ${header.accentColor || "#38bdf8"}, #60a5fa)`,
+                  }}
+                  className="mt-2 flex items-center justify-between rounded-2xl p-4 font-semibold text-white shadow-md shadow-sky-200/50"
                 >
                   <span className="flex items-center gap-3">
-                    <MessageCircle size={19} />
-                    Connect
+                    <Sparkles size={19} />
+                    {buttonText}
                   </span>
                   <ArrowUpRight size={19} />
                 </Link>

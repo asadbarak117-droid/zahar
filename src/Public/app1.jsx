@@ -6,19 +6,20 @@ import Products from "./pro.jsx";
 import Consultation from "./consulation.jsx";
 import Connect from "./contect.jsx";
 
-function Publicapp1() {
+
+function PublicApp() {
   return (
     <>
       <Header />
 
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/consultation" element={<Consultation />} />
-        <Route path="/connect" element={<Connect />} />
+        <Route index element={<Home />} />
+        <Route path="products" element={<Products />} />
+        <Route path="consultation" element={<Consultation />} />
+        <Route path="connect" element={<Connect />} />
       </Routes>
     </>
   );
 }
 
-export default Publicapp1;
+export default PublicApp;
